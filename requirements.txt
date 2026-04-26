@@ -1,0 +1,6 @@
+ccxt
+pandas
+streamlit
+scikit-learn
+joblib
+requests
