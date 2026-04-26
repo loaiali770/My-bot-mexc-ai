@@ -1,42 +1,53 @@
 import numpy as np
 
 def safe_div(a, b):
-    if b is None or b == 0 or np.isnan(b):
+    try:
+        if b == 0 or b is None or np.isnan(b):
+            return 0
+        return a / b
+    except:
         return 0
-    return a / b
+
 
 def extract_features(df):
     try:
-        if len(df) < 20:
+        # تأكد من وجود بيانات كافية
+        if df is None or len(df) < 20:
             return [0, 0, 0, 0, 0]
 
         last = df.iloc[-1]
         prev = df.iloc[-2]
 
-        ema_diff = last['ema8'] - last['ema21']
+        # EMA
+        ema8 = last.get('ema8', 0)
+        ema21 = last.get('ema21', 0)
+        ema_diff = ema8 - ema21
 
-        price_change = safe_div(
-            (last['c'] - prev['c']),
-            prev['c']
-        )
+        # Price change
+        prev_close = prev.get('c', 1)
+        last_close = last.get('c', 1)
+        price_change = safe_div((last_close - prev_close), prev_close)
 
+        # Volume ratio
         vol_mean = df['v'].rolling(10).mean().iloc[-1]
-        volume_ratio = safe_div(last['v'], vol_mean)
+        volume_ratio = safe_div(last.get('v', 0), vol_mean)
 
-        volatility = (df['h'] - df['l']).rolling(10).mean().iloc[-1]
-        if np.isnan(volatility):
-            volatility = 0
+        # Volatility
+        volat = (df['h'] - df['l']).rolling(10).mean().iloc[-1]
+        if volat is None or np.isnan(volat):
+            volat = 0
 
-        rsi = last['rsi']
-        if np.isnan(rsi):
+        # RSI
+        rsi = last.get('rsi', 50)
+        if rsi is None or np.isnan(rsi):
             rsi = 50
 
         return [
-            ema_diff,
-            price_change,
-            volume_ratio,
-            volatility,
-            rsi
+            float(ema_diff),
+            float(price_change),
+            float(volume_ratio),
+            float(volat),
+            float(rsi)
         ]
 
     except Exception as e:
